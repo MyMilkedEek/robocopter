@@ -37,12 +37,7 @@ public class Robocopter extends Robot {
         out.println(gunHeading);
         out.println(event.getBearing());
 
-        double b = gunHeading - radarHeading;
+        turnGunRight(getHeading() - getGunHeading() + event.getBearing());
 
-        if ( b > 0 ) {
-            turnGunRight(b);
-        } else {
-            turnGunLeft(b);
-        }
     }
 }
