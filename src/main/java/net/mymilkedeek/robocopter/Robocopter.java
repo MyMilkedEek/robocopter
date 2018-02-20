@@ -22,7 +22,6 @@ public class Robocopter extends Robot {
                 super.fire(1.0d);
             }
         }
-
     }
 
     @Override
@@ -38,6 +37,5 @@ public class Robocopter extends Robot {
         out.println(event.getBearing());
 
         turnGunRight(getHeading() - getGunHeading() + event.getBearing());
-
     }
 }
