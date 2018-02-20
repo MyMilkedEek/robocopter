@@ -7,9 +7,23 @@
     <groupId>net.mymilkedeek</groupId>
     <artifactId>robocopter</artifactId>
     <version>0.1.0-SNAPSHOT</version>
-    
+
     <dependencies>
+        <dependency>
+            <groupId>net.sf.robocode</groupId>
+            <artifactId>robocode.api</artifactId>
+            <version>1.9.3.0</version>
+        </dependency>
     </dependencies>
 
-
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*.properties</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
 </project>
