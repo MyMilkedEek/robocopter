@@ -1,9 +1,6 @@
 package net.mymilkedeek.robocopter;
 
-import robocode.BulletHitEvent;
-import robocode.BulletMissedEvent;
-import robocode.Robot;
-import robocode.ScannedRobotEvent;
+import robocode.*;
 
 /**
  * @author MyMilkedEek <Michael>
@@ -29,11 +26,6 @@ public class Robocopter extends Robot {
     @Override
     public void onBulletMissed(BulletMissedEvent event) {
         this.enemyScanned = false;
-    }
-
-    @Override
-    public void onBulletHit(BulletHitEvent event) {
-
     }
 
     @Override
