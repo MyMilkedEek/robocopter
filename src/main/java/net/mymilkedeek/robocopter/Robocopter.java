@@ -1,5 +1,7 @@
 package net.mymilkedeek.robocopter;
 
+import robocode.BulletHitEvent;
+import robocode.BulletMissedEvent;
 import robocode.Robot;
 import robocode.ScannedRobotEvent;
 
@@ -14,14 +16,24 @@ public class Robocopter extends Robot {
     @Override
     public void run() {
         while (true) {
-            if ( !enemyScanned ) {
+            if (! enemyScanned) {
                 super.turnRadarLeft(10d);
             }
 
-            if ( this.enemyScanned ) {
+            if (this.enemyScanned) {
                 super.fire(1.0d);
             }
         }
+    }
+
+    @Override
+    public void onBulletMissed(BulletMissedEvent event) {
+        this.enemyScanned = false;
+    }
+
+    @Override
+    public void onBulletHit(BulletHitEvent event) {
+
     }
 
     @Override
