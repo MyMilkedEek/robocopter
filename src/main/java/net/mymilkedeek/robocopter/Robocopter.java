@@ -16,15 +16,15 @@ import java.util.List;
 public class Robocopter extends AdvancedRobot {
 
     private static int BINS = 47;
-    private static double _surfStats[] = new double[BINS];
-    private Point2D.Double _myLocation;
-    private Point2D.Double _enemyLocation;
+    private static double surfStats[] = new double[BINS];
+    private Point2D.Double myLocation;
+    private Point2D.Double enemyLocation;
 
-    private List<EnemyWave> _enemyWaves;
-    private List<Integer> _surfDirections;
-    private List<Double> _surfAbsBearings;
+    private List<EnemyWave> enemyWaves;
+    private List<Integer> surfDirections;
+    private List<Double> surfAbsBearings;
 
-    private static double _oppEnergy = 100.0;
+    private static double opponentEnergy = 100.0;
 
     /**
      * This is a rectangle that represents an 800x600 battle field,
@@ -36,9 +36,9 @@ public class Robocopter extends AdvancedRobot {
     private static Rectangle2D.Double _fieldRect = new java.awt.geom.Rectangle2D.Double(18, 18, 764, 564);
 
     public void run() {
-        _enemyWaves = new ArrayList<EnemyWave>();
-        _surfDirections = new ArrayList<Integer>();
-        _surfAbsBearings = new ArrayList<Double>();
+        enemyWaves = new ArrayList<EnemyWave>();
+        surfDirections = new ArrayList<Integer>();
+        surfAbsBearings = new ArrayList<Double>();
 
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
@@ -49,7 +49,7 @@ public class Robocopter extends AdvancedRobot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-        _myLocation = new Point2D.Double(getX(), getY());
+        myLocation = new Point2D.Double(getX(), getY());
 
         double lateralVelocity = getVelocity() * Math.sin(e.getBearingRadians());
         double absBearing = e.getBearingRadians() + getHeadingRadians();
@@ -57,30 +57,30 @@ public class Robocopter extends AdvancedRobot {
         setTurnRadarRightRadians(Utils.normalRelativeAngle(absBearing
                 - getRadarHeadingRadians()) * 2);
 
-        _surfDirections.add(0,
+        surfDirections.add(0,
                 ( lateralVelocity >= 0 ) ? 1 : - 1);
-        _surfAbsBearings.add(0, absBearing + Math.PI);
+        surfAbsBearings.add(0, absBearing + Math.PI);
 
 
-        double bulletPower = _oppEnergy - e.getEnergy();
+        double bulletPower = opponentEnergy - e.getEnergy();
         if (bulletPower < 3.01 && bulletPower > 0.09
-                && _surfDirections.size() > 2) {
+                && surfDirections.size() > 2) {
             EnemyWave ew = new EnemyWave();
             ew.fireTime = getTime() - 1;
             ew.bulletVelocity = bulletVelocity(bulletPower);
             ew.distanceTraveled = bulletVelocity(bulletPower);
-            ew.direction = _surfDirections.get(2);
-            ew.directAngle = _surfAbsBearings.get(2);
-            ew.fireLocation = (Point2D.Double) _enemyLocation.clone(); // last tick
+            ew.direction = surfDirections.get(2);
+            ew.directAngle = surfAbsBearings.get(2);
+            ew.fireLocation = (Point2D.Double) enemyLocation.clone(); // last tick
 
-            _enemyWaves.add(ew);
+            enemyWaves.add(ew);
         }
 
-        _oppEnergy = e.getEnergy();
+        opponentEnergy = e.getEnergy();
 
         // update after EnemyWave detection, because that needs the previous
         // enemy location as the source of the wave
-        _enemyLocation = project(_myLocation, absBearing, e.getDistance());
+        enemyLocation = project(myLocation, absBearing, e.getDistance());
 
         updateWaves();
         doSurfing();
@@ -89,13 +89,13 @@ public class Robocopter extends AdvancedRobot {
     }
 
     private void updateWaves() {
-        for (int x = 0; x < _enemyWaves.size(); x++) {
-            EnemyWave ew = _enemyWaves.get(x);
+        for (int x = 0; x < enemyWaves.size(); x++) {
+            EnemyWave ew = enemyWaves.get(x);
 
             ew.distanceTraveled = ( getTime() - ew.fireTime ) * ew.bulletVelocity;
             if (ew.distanceTraveled >
-                    _myLocation.distance(ew.fireLocation) + 50) {
-                _enemyWaves.remove(x);
+                    myLocation.distance(ew.fireLocation) + 50) {
+                enemyWaves.remove(x);
                 x--;
             }
         }
@@ -123,22 +123,22 @@ public class Robocopter extends AdvancedRobot {
             // for the spot bin that we were hit on, add 1;
             // for the bins next to it, add 1 / 2;
             // the next one, add 1 / 5; and so on...
-            _surfStats[x] += 1.0 / ( Math.pow(index - x, 2) + 1 );
+            surfStats[x] += 1.0 / ( Math.pow(index - x, 2) + 1 );
         }
     }
 
     public void onHitByBullet(HitByBulletEvent e) {
-        // If the _enemyWaves collection is empty, we must have missed the
+        // If the enemyWaves collection is empty, we must have missed the
         // detection of this wave somehow.
-        if (! _enemyWaves.isEmpty()) {
+        if (! enemyWaves.isEmpty()) {
             Point2D.Double hitBulletLocation = new Point2D.Double(
                     e.getBullet().getX(), e.getBullet().getY());
             EnemyWave hitWave = null;
 
             // look through the EnemyWaves, and find one that could've hit us.
-            for (EnemyWave ew : _enemyWaves) {
+            for (EnemyWave ew : enemyWaves) {
                 if (Math.abs(ew.distanceTraveled -
-                        _myLocation.distance(ew.fireLocation)) < 50
+                        myLocation.distance(ew.fireLocation)) < 50
                         && Math.abs(bulletVelocity(e.getBullet().getPower())
                         - ew.bulletVelocity) < 0.001) {
                     hitWave = ew;
@@ -150,13 +150,13 @@ public class Robocopter extends AdvancedRobot {
                 logHit(hitWave, hitBulletLocation);
 
                 // We can remove this wave now, of course.
-                _enemyWaves.remove(_enemyWaves.lastIndexOf(hitWave));
+                enemyWaves.remove(enemyWaves.lastIndexOf(hitWave));
             }
         }
     }
 
     private Point2D.Double predictPosition(EnemyWave surfWave, int direction) {
-        Point2D.Double predictedPosition = (Point2D.Double) _myLocation.clone();
+        Point2D.Double predictedPosition = (Point2D.Double) myLocation.clone();
         double predictedVelocity = getVelocity();
         double predictedHeading = getHeadingRadians();
         double maxTurning, moveAngle, moveDir;
@@ -210,7 +210,7 @@ public class Robocopter extends AdvancedRobot {
         int index = getFactorIndex(surfWave,
                 predictPosition(surfWave, direction));
 
-        return _surfStats[index];
+        return surfStats[index];
     }
 
     private void doSurfing() {
@@ -223,11 +223,11 @@ public class Robocopter extends AdvancedRobot {
         double dangerLeft = checkDanger(surfWave, - 1);
         double dangerRight = checkDanger(surfWave, 1);
 
-        double goAngle = absoluteBearing(surfWave.fireLocation, _myLocation);
+        double goAngle = absoluteBearing(surfWave.fireLocation, myLocation);
         if (dangerLeft < dangerRight) {
-            goAngle = wallSmoothing(_myLocation, goAngle - ( Math.PI / 2 ), - 1);
+            goAngle = wallSmoothing(myLocation, goAngle - ( Math.PI / 2 ), - 1);
         } else {
-            goAngle = wallSmoothing(_myLocation, goAngle + ( Math.PI / 2 ), 1);
+            goAngle = wallSmoothing(myLocation, goAngle + ( Math.PI / 2 ), 1);
         }
 
         setBackAsFront(this, goAngle);
@@ -237,8 +237,8 @@ public class Robocopter extends AdvancedRobot {
         double closestDistance = 50000; // I juse use some very big number here
         EnemyWave surfWave = null;
 
-        for (EnemyWave ew : _enemyWaves) {
-            double distance = _myLocation.distance(ew.fireLocation)
+        for (EnemyWave ew : enemyWaves) {
+            double distance = myLocation.distance(ew.fireLocation)
                     - ew.distanceTraveled;
 
             if (distance > ew.bulletVelocity && distance < closestDistance) {
