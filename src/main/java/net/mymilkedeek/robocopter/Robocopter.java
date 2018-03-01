@@ -33,7 +33,7 @@ public class Robocopter extends AdvancedRobot {
      * the amount of space we try to always have on either end of the tank
      * (extending straight out the front or back) before touching a wall.
      */
-    private static Rectangle2D.Double _fieldRect = new java.awt.geom.Rectangle2D.Double(18, 18, 764, 564);
+    private static Rectangle2D.Double fieldRect = new java.awt.geom.Rectangle2D.Double(18, 18, 764, 564);
 
     public void run() {
         enemyWaves = new ArrayList<EnemyWave>();
@@ -252,7 +252,7 @@ public class Robocopter extends AdvancedRobot {
 
     private double wallSmoothing(Point2D.Double botLocation, double angle, int orientation) {
         double WALL_STICK = 160;
-        while (! _fieldRect.contains(project(botLocation, angle, WALL_STICK))) {
+        while (! fieldRect.contains(project(botLocation, angle, WALL_STICK))) {
             angle += orientation * 0.05;
         }
         return angle;
