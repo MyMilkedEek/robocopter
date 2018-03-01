@@ -15,16 +15,15 @@ import java.util.List;
  */
 public class Robocopter extends AdvancedRobot {
 
+    private Enemy enemy;
+
     private static int BINS = 47;
     private static double surfStats[] = new double[BINS];
     private Point2D.Double myLocation;
-    private Point2D.Double enemyLocation;
 
     private List<EnemyWave> enemyWaves;
     private List<Integer> surfDirections;
     private List<Double> surfAbsBearings;
-
-    private static double opponentEnergy = 100.0;
 
     /**
      * This is a rectangle that represents an 800x600 battle field,
@@ -34,6 +33,10 @@ public class Robocopter extends AdvancedRobot {
      * (extending straight out the front or back) before touching a wall.
      */
     private static Rectangle2D.Double fieldRect = new java.awt.geom.Rectangle2D.Double(18, 18, 764, 564);
+
+    public Robocopter() {
+        this.enemy = new Enemy();
+    }
 
     public void run() {
         enemyWaves = new ArrayList<EnemyWave>();
@@ -49,7 +52,8 @@ public class Robocopter extends AdvancedRobot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-        myLocation = new Point2D.Double(getX(), getY());
+        myLocation.x = getX();
+        myLocation.y = getY();
 
         double lateralVelocity = getVelocity() * Math.sin(e.getBearingRadians());
         double absBearing = e.getBearingRadians() + getHeadingRadians();
@@ -62,25 +66,24 @@ public class Robocopter extends AdvancedRobot {
         surfAbsBearings.add(0, absBearing + Math.PI);
 
 
-        double bulletPower = opponentEnergy - e.getEnergy();
-        if (bulletPower < 3.01 && bulletPower > 0.09
-                && surfDirections.size() > 2) {
+        double bulletPower = this.enemy.getEnergy() - e.getEnergy();
+        if (bulletPower < 3.01 && bulletPower > 0.09 && surfDirections.size() > 2) {
             EnemyWave ew = new EnemyWave();
             ew.fireTime = getTime() - 1;
             ew.bulletVelocity = bulletVelocity(bulletPower);
             ew.distanceTraveled = bulletVelocity(bulletPower);
             ew.direction = surfDirections.get(2);
             ew.directAngle = surfAbsBearings.get(2);
-            ew.fireLocation = (Point2D.Double) enemyLocation.clone(); // last tick
+            ew.fireLocation = this.enemy.getLocationClone(); // last tick
 
             enemyWaves.add(ew);
         }
 
-        opponentEnergy = e.getEnergy();
+        this.enemy.setEnergy(e.getEnergy());
 
         // update after EnemyWave detection, because that needs the previous
         // enemy location as the source of the wave
-        enemyLocation = project(myLocation, absBearing, e.getDistance());
+        this.enemy.setLocation(project(myLocation, absBearing, e.getDistance()));
 
         updateWaves();
         doSurfing();
@@ -258,10 +261,8 @@ public class Robocopter extends AdvancedRobot {
         return angle;
     }
 
-    private static Point2D.Double project(Point2D.Double sourceLocation,
-                                          double angle, double length) {
-        return new Point2D.Double(sourceLocation.x + Math.sin(angle) * length,
-                sourceLocation.y + Math.cos(angle) * length);
+    private static Point2D.Double project(Point2D.Double sourceLocation, double angle, double length) {
+        return new Point2D.Double(sourceLocation.x + Math.sin(angle) * length, sourceLocation.y + Math.cos(angle) * length);
     }
 
     private static double absoluteBearing(Point2D.Double source, Point2D.Double target) {
