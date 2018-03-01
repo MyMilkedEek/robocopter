@@ -8,22 +8,23 @@ import robocode.util.Utils;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author MyMilkedEek <Michael>
  */
 public class Robocopter extends AdvancedRobot {
 
-    public static int BINS = 47;
-    public static double _surfStats[] = new double[BINS];
-    public Point2D.Double _myLocation;
-    public Point2D.Double _enemyLocation;
+    private static int BINS = 47;
+    private static double _surfStats[] = new double[BINS];
+    private Point2D.Double _myLocation;
+    private Point2D.Double _enemyLocation;
 
-    public ArrayList _enemyWaves;
-    public ArrayList _surfDirections;
-    public ArrayList _surfAbsBearings;
+    private List<EnemyWave> _enemyWaves;
+    private List<Integer> _surfDirections;
+    private List<Double> _surfAbsBearings;
 
-    public static double _oppEnergy = 100.0;
+    private static double _oppEnergy = 100.0;
 
     /**
      * This is a rectangle that represents an 800x600 battle field,
@@ -32,13 +33,12 @@ public class Robocopter extends AdvancedRobot {
      * the amount of space we try to always have on either end of the tank
      * (extending straight out the front or back) before touching a wall.
      */
-    public static Rectangle2D.Double _fieldRect = new java.awt.geom.Rectangle2D.Double(18, 18, 764, 564);
-    public static double WALL_STICK = 160;
+    private static Rectangle2D.Double _fieldRect = new java.awt.geom.Rectangle2D.Double(18, 18, 764, 564);
 
     public void run() {
-        _enemyWaves = new ArrayList();
-        _surfDirections = new ArrayList();
-        _surfAbsBearings = new ArrayList();
+        _enemyWaves = new ArrayList<EnemyWave>();
+        _surfDirections = new ArrayList<Integer>();
+        _surfAbsBearings = new ArrayList<Double>();
 
         setAdjustGunForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
@@ -58,8 +58,8 @@ public class Robocopter extends AdvancedRobot {
                 - getRadarHeadingRadians()) * 2);
 
         _surfDirections.add(0,
-                new Integer(( lateralVelocity >= 0 ) ? 1 : - 1));
-        _surfAbsBearings.add(0, new Double(absBearing + Math.PI));
+                ( lateralVelocity >= 0 ) ? 1 : - 1);
+        _surfAbsBearings.add(0, absBearing + Math.PI);
 
 
         double bulletPower = _oppEnergy - e.getEnergy();
@@ -69,8 +69,8 @@ public class Robocopter extends AdvancedRobot {
             ew.fireTime = getTime() - 1;
             ew.bulletVelocity = bulletVelocity(bulletPower);
             ew.distanceTraveled = bulletVelocity(bulletPower);
-            ew.direction = ( (Integer) _surfDirections.get(2) ).intValue();
-            ew.directAngle = ( (Double) _surfAbsBearings.get(2) ).doubleValue();
+            ew.direction = _surfDirections.get(2);
+            ew.directAngle = _surfAbsBearings.get(2);
             ew.fireLocation = (Point2D.Double) _enemyLocation.clone(); // last tick
 
             _enemyWaves.add(ew);
@@ -88,9 +88,9 @@ public class Robocopter extends AdvancedRobot {
         // gun code would go here...
     }
 
-    public void updateWaves() {
+    private void updateWaves() {
         for (int x = 0; x < _enemyWaves.size(); x++) {
-            EnemyWave ew = (EnemyWave) _enemyWaves.get(x);
+            EnemyWave ew = _enemyWaves.get(x);
 
             ew.distanceTraveled = ( getTime() - ew.fireTime ) * ew.bulletVelocity;
             if (ew.distanceTraveled >
@@ -103,7 +103,7 @@ public class Robocopter extends AdvancedRobot {
 
     // Given the EnemyWave that the bullet was on, and the point where we
     // were hit, calculate the index into our stat array for that factor.
-    public static int getFactorIndex(EnemyWave ew, Point2D.Double targetLocation) {
+    private static int getFactorIndex(EnemyWave ew, Point2D.Double targetLocation) {
         double offsetAngle = ( absoluteBearing(ew.fireLocation, targetLocation)
                 - ew.directAngle );
         double factor = Utils.normalRelativeAngle(offsetAngle)
@@ -116,7 +116,7 @@ public class Robocopter extends AdvancedRobot {
 
     // Given the EnemyWave that the bullet was on, and the point where we
     // were hit, update our stat array to reflect the danger in that area.
-    public void logHit(EnemyWave ew, Point2D.Double targetLocation) {
+    private void logHit(EnemyWave ew, Point2D.Double targetLocation) {
         int index = getFactorIndex(ew, targetLocation);
 
         for (int x = 0; x < BINS; x++) {
@@ -136,9 +136,7 @@ public class Robocopter extends AdvancedRobot {
             EnemyWave hitWave = null;
 
             // look through the EnemyWaves, and find one that could've hit us.
-            for (int x = 0; x < _enemyWaves.size(); x++) {
-                EnemyWave ew = (EnemyWave) _enemyWaves.get(x);
-
+            for (EnemyWave ew : _enemyWaves) {
                 if (Math.abs(ew.distanceTraveled -
                         _myLocation.distance(ew.fireLocation)) < 50
                         && Math.abs(bulletVelocity(e.getBullet().getPower())
@@ -157,7 +155,7 @@ public class Robocopter extends AdvancedRobot {
         }
     }
 
-    public Point2D.Double predictPosition(EnemyWave surfWave, int direction) {
+    private Point2D.Double predictPosition(EnemyWave surfWave, int direction) {
         Point2D.Double predictedPosition = (Point2D.Double) _myLocation.clone();
         double predictedVelocity = getVelocity();
         double predictedHeading = getHeadingRadians();
@@ -208,14 +206,14 @@ public class Robocopter extends AdvancedRobot {
         return predictedPosition;
     }
 
-    public double checkDanger(EnemyWave surfWave, int direction) {
+    private double checkDanger(EnemyWave surfWave, int direction) {
         int index = getFactorIndex(surfWave,
                 predictPosition(surfWave, direction));
 
         return _surfStats[index];
     }
 
-    public void doSurfing() {
+    private void doSurfing() {
         EnemyWave surfWave = getClosestSurfableWave();
 
         if (surfWave == null) {
@@ -235,12 +233,11 @@ public class Robocopter extends AdvancedRobot {
         setBackAsFront(this, goAngle);
     }
 
-    public EnemyWave getClosestSurfableWave() {
+    private EnemyWave getClosestSurfableWave() {
         double closestDistance = 50000; // I juse use some very big number here
         EnemyWave surfWave = null;
 
-        for (int x = 0; x < _enemyWaves.size(); x++) {
-            EnemyWave ew = (EnemyWave) _enemyWaves.get(x);
+        for (EnemyWave ew : _enemyWaves) {
             double distance = _myLocation.distance(ew.fireLocation)
                     - ew.distanceTraveled;
 
@@ -253,36 +250,37 @@ public class Robocopter extends AdvancedRobot {
         return surfWave;
     }
 
-    public double wallSmoothing(Point2D.Double botLocation, double angle, int orientation) {
+    private double wallSmoothing(Point2D.Double botLocation, double angle, int orientation) {
+        double WALL_STICK = 160;
         while (! _fieldRect.contains(project(botLocation, angle, WALL_STICK))) {
             angle += orientation * 0.05;
         }
         return angle;
     }
 
-    public static Point2D.Double project(Point2D.Double sourceLocation,
-                                         double angle, double length) {
+    private static Point2D.Double project(Point2D.Double sourceLocation,
+                                          double angle, double length) {
         return new Point2D.Double(sourceLocation.x + Math.sin(angle) * length,
                 sourceLocation.y + Math.cos(angle) * length);
     }
 
-    public static double absoluteBearing(Point2D.Double source, Point2D.Double target) {
+    private static double absoluteBearing(Point2D.Double source, Point2D.Double target) {
         return Math.atan2(target.x - source.x, target.y - source.y);
     }
 
-    public static double limit(double min, double value, double max) {
+    private static double limit(double min, double value, double max) {
         return Math.max(min, Math.min(value, max));
     }
 
-    public static double bulletVelocity(double power) {
+    private static double bulletVelocity(double power) {
         return ( 20.0 - ( 3.0 * power ) );
     }
 
-    public static double maxEscapeAngle(double velocity) {
+    private static double maxEscapeAngle(double velocity) {
         return Math.asin(8.0 / velocity);
     }
 
-    public static void setBackAsFront(AdvancedRobot robot, double goAngle) {
+    private static void setBackAsFront(AdvancedRobot robot, double goAngle) {
         double angle =
                 Utils.normalRelativeAngle(goAngle - robot.getHeadingRadians());
         if (Math.abs(angle) > ( Math.PI / 2 )) {
