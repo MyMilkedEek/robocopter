@@ -52,8 +52,7 @@ public class Robocopter extends AdvancedRobot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-        myLocation.x = getX();
-        myLocation.y = getY();
+        myLocation = new Point2D.Double(getX(), getY());
 
         double lateralVelocity = getVelocity() * Math.sin(e.getBearingRadians());
         double absBearing = e.getBearingRadians() + getHeadingRadians();
